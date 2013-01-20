@@ -1,0 +1,2 @@
+gnustep-base-runtime: hardening-no-stackprotector usr/bin/*
+gnustep-base-runtime: hardening-no-fortify-functions usr/bin/*
