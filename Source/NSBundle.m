@@ -51,6 +51,7 @@
 #import "Foundation/NSData.h"
 #import "Foundation/NSURL.h"
 #import "Foundation/NSValue.h"
+#import "Foundation/NSPropertyList.h"
 #import "GNUstepBase/NSObject+GNUstepBase.h"
 #import "GNUstepBase/NSString+GNUstepBase.h"
 
@@ -2564,52 +2565,19 @@ IF_NO_GC(
           length = [tableData length];
           /*
            * A localisation file can be ...
+	   * a binary plist,
            * UTF16 with a leading BOM,
            * UTF8 with a leading BOM,
            * or ASCII (the original standard) with \U escapes.
            */
-          if (length > 2
-              && ((bytes[0] == 0xFF && bytes[1] == 0xFE)
-                  || (bytes[0] == 0xFE && bytes[1] == 0xFF)))
-            {
-              encoding = NSUnicodeStringEncoding;
-            }
-          else if (length > 2
-                   && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
-            {
-              encoding = NSUTF8StringEncoding;
-            }
-          else
-            {
-              encoding = NSASCIIStringEncoding;
-            }
-          tableContent = [[NSString alloc] initWithData: tableData
-                                           encoding: encoding];
-          if (tableContent == nil && encoding == NSASCIIStringEncoding)
-            {
-              encoding = [NSString defaultCStringEncoding];
-              tableContent = [[NSString alloc] initWithData: tableData
-                                               encoding: encoding];
-              if (tableContent != nil)
-                {
-                  NSWarnMLog (@"Localisation file %@ not in portable encoding"
-		    @" so I'm using the default encoding for the current"
-		    @" system, which may not display messages correctly.\n"
-		    @"The file should be ASCII (using \\U escapes for unicode"
-		    @" characters) or Unicode (UTF16 or UTF8) with a leading "
-		    @"byte-order-marker.\n", tablePath);
-                }
-            }
-          if (tableContent == nil)
-            {
-              NSWarnMLog(@"Failed to load strings file %@ - bad character"
-                         @" encoding", tablePath);
-            }
-          else
+	  if (length > 8 && (0 == memcmp(bytes, "bplist00", 8)))
             {
               NS_DURING
                 {
-                  table = [tableContent propertyListFromStringsFileFormat];
+		  table = [NSPropertyListSerialization propertyListFromData: tableData
+							   mutabilityOption: NSPropertyListImmutable
+								     format: NULL
+							   errorDescription: NULL];
                 }
               NS_HANDLER
                 {
@@ -2618,8 +2586,61 @@ IF_NO_GC(
                 }
               NS_ENDHANDLER
             }
+	  else
+	    {
+              if (length > 2
+                  && ((bytes[0] == 0xFF && bytes[1] == 0xFE)
+                      || (bytes[0] == 0xFE && bytes[1] == 0xFF)))
+                {
+                  encoding = NSUnicodeStringEncoding;
+                }
+              else if (length > 2
+                       && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+                {
+                  encoding = NSUTF8StringEncoding;
+                }
+              else
+                {
+                  encoding = NSASCIIStringEncoding;
+                }
+              tableContent = [[NSString alloc] initWithData: tableData
+                                           encoding: encoding];
+              if (tableContent == nil && encoding == NSASCIIStringEncoding)
+                {
+                  encoding = [NSString defaultCStringEncoding];
+                  tableContent = [[NSString alloc] initWithData: tableData
+                                                   encoding: encoding];
+                  if (tableContent != nil)
+                    {
+                      NSWarnMLog (@"Localisation file %@ not in portable encoding"
+		        @" so I'm using the default encoding for the current"
+		        @" system, which may not display messages correctly.\n"
+		        @"The file should be ASCII (using \\U escapes for unicode"
+		        @" characters) or Unicode (UTF16 or UTF8) with a leading "
+		        @"byte-order-marker.\n", tablePath);
+                    }
+                }
+              if (tableContent == nil)
+                {
+                  NSWarnMLog(@"Failed to load strings file %@ - bad character"
+                             @" encoding", tablePath);
+                }
+              else
+                {
+                  NS_DURING
+                    {
+                      table = [tableContent propertyListFromStringsFileFormat];
+                    }
+                  NS_HANDLER
+                    {
+                      NSWarnMLog(@"Failed to parse strings file %@ - %@",
+                                 tablePath, localException);
+                    }
+                  NS_ENDHANDLER
+                }
+              RELEASE(tableContent);
+	    }
           RELEASE(tableData);
-          RELEASE(tableContent);
         }
       else
         {
