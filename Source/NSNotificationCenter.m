@@ -34,6 +34,9 @@
 #import "Foundation/NSNotification.h"
 #import "Foundation/NSDictionary.h"
 #import "Foundation/NSException.h"
+#ifdef __BLOCKS__
+#import "Foundation/NSOperation.h"
+#endif //__BLOCKS__
 #import "Foundation/NSLock.h"
 #import "Foundation/NSThread.h"
 #import "GNUstepBase/GSLock.h"
@@ -660,6 +663,54 @@ purgeCollectedFromMapNode(GSIMapTable map, GSIMapNode node)
 
 
 
+#ifdef __BLOCKS__
+/**
+ * Proxy for block notifications
+ */
+@interface BlockProxy : NSOperation
+{
+@public
+  id                 _object;
+  NSOperationQueue * _queue;
+  void (^_block)(NSNotification *);
+  NSNotification *   _notification;
+}
+
+- (BlockProxy*)init: (id)object
+	      queue: (NSOperationQueue *)queue
+	 usingBlock: (void (^)(NSNotification *))block;
+
+- (void)run: (NSNotification *)notification;
+
+- (void)main;
+
+@end
+
+@implementation BlockProxy
+- (BlockProxy*)init: (id)object
+	      queue: (NSOperationQueue *)queue
+	 usingBlock: (void (^)(NSNotification *))block
+{
+	self->_object = object;
+	self->_queue = queue;
+	self->_block = [[block copy] autorelease];
+	return self;
+}
+
+- (void)run: (NSNotification *)notification
+{
+	self->_notification = notification;
+	[self->_queue addOperation: self];
+}
+
+- (void)main
+{
+	self->_block(self->_notification);
+}
+
+@end
+#endif // __BLOCKS__
+
 /**
  * <p>GNUstep provides a framework for sending messages between objects within
  * a process called <em>notifications</em>.  Objects register with an
@@ -898,6 +949,28 @@ static NSNotificationCenter *default_center = nil;
 
   unlockNCTable(TABLE);
 }
+
+#ifdef __BLOCKS__
+/**
+ * Register an observer with a block to execute whenever there
+ * is a notification.
+ */
+- (id)addObserverForName: (NSString *)name
+		  object: (id)obj
+		   queue: (NSOperationQueue *)queue
+	      usingBlock: (void (^)(NSNotification *))block
+{
+	BlockProxy *proxyObject = [[BlockProxy alloc] init: obj
+						     queue: queue
+					        usingBlock: block];
+	[self addObserver: proxyObject
+		 selector: NSSelectorFromString(@"run:")
+		     name: name
+		   object: obj];
+
+	return (id)proxyObject;
+}
+#endif // __BLOCKS__
 
 /**
  * Deregisters observer for notifications matching name and/or object.  If
