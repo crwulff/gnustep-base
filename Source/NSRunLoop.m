@@ -64,6 +64,7 @@
 
 
 NSString * const NSDefaultRunLoopMode = @"NSDefaultRunLoopMode";
+NSString * const NSRunLoopCommonModes = @"NSRunLoopCommonModes";
 
 static NSDate	*theFuture = nil;
 

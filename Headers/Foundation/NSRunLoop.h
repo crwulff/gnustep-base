@@ -40,6 +40,7 @@ extern "C" {
  * <code>Foundation/NSRunLoop.h</code>.
  */
 GS_EXPORT NSString * const NSDefaultRunLoopMode;
+GS_EXPORT NSString * const NSRunLoopCommonModes;
 
 @interface NSRunLoop : NSObject
 {
