@@ -1,3 +1,40 @@
+2013-01-22  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Source/NSPredicate.m: Fixup parsing of function expressions.
+
+2013-01-14  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Source/NSLocale.m: ([-_getExemplarCharacterSet]) Fix error in handling
+        returned range (bug #38118 reported by X Y <macgritsch>
+        * Source/NSPropertyList.m: Fix encoding of date objects when using the
+        OpenStep format to simply used the description of the3 date.
+        Fixes bug #38017
+        * Source/NSURLConnection.m: a synchronous download with no response
+        body should return an empty data item rather than nil ... fix for
+        bug #38043
+        * Source/GSTLS.m: Log a warning message if we load a certificate
+        which has expired or is not yet valid.
+
+2013-01-14  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Source/NSString.m: ([stringByAppendingPathComponent:]) recalculate
+        root of patch correctly before stripping trailing separators.
+
+2013-01-13  Fred Kiefer <FredKiefer@gmx.de>
+
+	* Headers/Foundation/NSDistributedNotificationCenter.h,
+	* Source/NSDistributedNotificationCenter.m: Correct the return
+	types of the factory methods.
+
+2013-01-08  Richard Frith-Macdonald <rfm@gnu.org>
+
+        * Source/GSString.m:
+        When creating a substring (C) of a substring (B) or a string (A),
+        we now retain the (A) in (C) rather than having (C) retain (B)
+        which in turn retains (A).  This has the advantage that it is
+        possible for the intermediate (B) to be released if nothing else
+        ues it.
+
 2013-01-05 00:49-EST Gregory John Casamento <greg.casamento@gmail.com>
 
 	* Headers/Foundation/NSMetadata.h: Add _ to delegate.

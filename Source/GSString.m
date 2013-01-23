@@ -757,7 +757,7 @@ static BOOL useTinyStrings;
 static int tinyStrings = 0;
 static void logTinyStringCount(void)
 {
-	fprintf(stderr, "%d tiny strings created\n", tinyStrings);
+  fprintf(stderr, "%d tiny strings created\n", tinyStrings);
 }
 #endif
 @implementation GSTinyString
@@ -3752,12 +3752,14 @@ agree, create a new GSCInlineString otherwise.
 {
   if (!_flags.wide)
     {
-      id tinyString = createTinyString((char*)_contents.c + aRange.location, aRange.length);
+      id tinyString;
 
+      tinyString = createTinyString((char*)_contents.c + aRange.location,
+        aRange.length);
       if (tinyString)
-      {
-        return tinyString;
-      }
+        {
+          return tinyString;
+        }
     }
   if (_flags.owned)
     {
@@ -3776,12 +3778,14 @@ agree, create a new GSCInlineString otherwise.
     }
   if (!_flags.wide)
     {
-      id tinyString = createTinyString((char*)_contents.c + aRange.location, aRange.length);
+      id tinyString;
 
+      tinyString = createTinyString((char*)_contents.c + aRange.location,
+        aRange.length);
       if (tinyString)
-      {
-        return tinyString;
-      }
+        {
+          return tinyString;
+        }
     }
   return [super substringWithRange: aRange];
 }
@@ -3842,6 +3846,35 @@ agree, create a new GSCInlineString otherwise.
   DESTROY(_parent);
   [super dealloc];
 }
+
+- (NSString*) substringFromRange: (NSRange)aRange
+{
+  id    s;
+
+  GS_RANGE_CHECK(aRange, _count);
+  s = createTinyString((char*)_contents.c + aRange.location, aRange.length);
+  if (nil == s)
+    {
+      aRange.location += (_contents.c - _parent->_contents.c);
+      s = substring_c((GSStr)_parent, aRange);
+    }
+  return s;
+}
+
+- (NSString*) substringWithRange: (NSRange)aRange
+{
+  id    s;
+
+  GS_RANGE_CHECK(aRange, _count);
+  s = createTinyString((char*)_contents.c + aRange.location, aRange.length);
+  if (nil == s)
+    {
+      aRange.location += (_contents.c - _parent->_contents.c);
+      s = substring_c((GSStr)_parent, aRange);
+    }
+  return s;
+}
+
 @end
 
 
@@ -4087,12 +4120,14 @@ agree, create a new GSCInlineString otherwise.
 {
   if (!_flags.wide)
     {
-      id tinyString = createTinyString((char*)_contents.c + aRange.location, aRange.length);
+      id tinyString;
 
+      tinyString = createTinyString((char*)_contents.c + aRange.location,
+        aRange.length);
       if (tinyString)
-      {
-        return tinyString;
-      }
+        {
+          return tinyString;
+        }
     }
   if (_flags.owned)
     {
@@ -4106,12 +4141,14 @@ agree, create a new GSCInlineString otherwise.
 {
   if (!_flags.wide)
     {
-      id tinyString = createTinyString((char*)_contents.c + aRange.location, aRange.length);
+      id tinyString;
 
+      tinyString = createTinyString((char*)_contents.c + aRange.location,
+        aRange.length);
       if (tinyString)
-      {
-        return tinyString;
-      }
+        {
+          return tinyString;
+        }
     }
   if (_flags.owned)
     {
@@ -4212,6 +4249,21 @@ agree, create a new GSUInlineString otherwise.
   DESTROY(_parent);
   [super dealloc];
 }
+
+- (NSString*) substringFromRange: (NSRange)aRange
+{
+  GS_RANGE_CHECK(aRange, _count);
+  aRange.location += (_contents.u - _parent->_contents.u);
+  return substring_u((GSStr)_parent, aRange);
+}
+
+- (NSString*) substringWithRange: (NSRange)aRange
+{
+  GS_RANGE_CHECK(aRange, _count);
+  aRange.location += (_contents.u - _parent->_contents.u);
+  return substring_u((GSStr)_parent, aRange);
+}
+
 @end
 
 
@@ -5119,19 +5171,22 @@ NSAssert(_flags.owned == 1 && _zone != 0, NSInternalInconsistencyException);
     }
   else
     {
-      id tinyString = createTinyString((char*)_contents.c + aRange.location, aRange.length);
+      id tinyString;
 
+      tinyString = createTinyString((char*)_contents.c + aRange.location,
+        aRange.length);
       if (tinyString)
-      {
-        return tinyString;
-      }
-    }
-    {
-      GSCInlineString *o;
+        {
+          return tinyString;
+        }
+      else
+        {
+          GSCInlineString *o;
 
-      o = [newCInline(aRange.length, [self zone]) autorelease];
-      memcpy(o->_contents.c, _contents.c + aRange.location, aRange.length);
-      return o;
+          o = [newCInline(aRange.length, [self zone]) autorelease];
+          memcpy(o->_contents.c, _contents.c + aRange.location, aRange.length);
+          return o;
+        }
     }
 }
 
@@ -5154,19 +5209,22 @@ NSAssert(_flags.owned == 1 && _zone != 0, NSInternalInconsistencyException);
     }
   else
     {
-      id tinyString = createTinyString((char*)_contents.c + aRange.location, aRange.length);
+      id tinyString;
 
+      tinyString = createTinyString((char*)_contents.c + aRange.location,
+        aRange.length);
       if (tinyString)
-      {
-        return tinyString;
-      }
-    }
-    {
-      GSCInlineString *o;
+        {
+          return tinyString;
+        }
+      else
+        {
+          GSCInlineString *o;
 
-      o = [newCInline(aRange.length, [self zone]) autorelease];
-      memcpy(o->_contents.c, _contents.c + aRange.location, aRange.length);
-      return o;
+          o = [newCInline(aRange.length, [self zone]) autorelease];
+          memcpy(o->_contents.c, _contents.c + aRange.location, aRange.length);
+          return o;
+        }
     }
 }
 
