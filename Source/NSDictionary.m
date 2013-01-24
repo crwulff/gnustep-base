@@ -644,7 +644,7 @@ static SEL	appSel;
  */
 - (id) initWithContentsOfFile: (NSString*)path
 {
-  id result;
+  id result = nil;
 
   NSData *tableData = [[NSData alloc] initWithContentsOfFile: path];
   const unsigned char	*bytes = [tableData bytes];
@@ -663,6 +663,7 @@ static SEL	appSel;
         {
            NSWarnMLog(@"Failed to parse plist file %@ - %@",
                       path, localException);
+	   result = nil;
         }
       NS_ENDHANDLER
     }
@@ -691,9 +692,18 @@ static SEL	appSel;
     }
   RELEASE(tableData);
 
-  if ([result isKindOfClass: NSDictionaryClass])
+  if (result != nil)
     {
-      self = [self initWithDictionary: result];
+      if ([result isKindOfClass: NSDictionaryClass])
+        {
+          self = [self initWithDictionary: result];
+        }
+      else
+        {
+          NSWarnMLog(@"Contents of file '%@' does not contain a dictionary",
+                     path);
+          DESTROY(self);
+        }
     }
   else
     {
