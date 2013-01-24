@@ -644,38 +644,62 @@ static SEL	appSel;
  */
 - (id) initWithContentsOfFile: (NSString*)path
 {
-  NSString 	*myString;
+  id result;
 
-  myString = [[NSString allocWithZone: NSDefaultMallocZone()]
-    initWithContentsOfFile: path];
-  if (myString == nil)
+  NSData *tableData = [[NSData alloc] initWithContentsOfFile: path];
+  const unsigned char	*bytes = [tableData bytes];
+  unsigned		length = [tableData length];
+
+  if (length > 8 && (0 == memcmp(bytes, "bplist00", 8)))
     {
-      DESTROY(self);
+      NS_DURING
+        {
+          result = [NSPropertyListSerialization propertyListFromData: tableData
+						    mutabilityOption: NSPropertyListImmutable
+							      format: NULL
+						    errorDescription: NULL];
+        }
+      NS_HANDLER
+        {
+           NSWarnMLog(@"Failed to parse plist file %@ - %@",
+                      path, localException);
+        }
+      NS_ENDHANDLER
     }
   else
     {
-      id result;
-
-      NS_DURING
-	{
-	  result = [myString propertyList];
-	}
-      NS_HANDLER
-	{
-          result = nil;
-	}
-      NS_ENDHANDLER
-      RELEASE(myString);
-      if ([result isKindOfClass: NSDictionaryClass])
-	{
-	  self = [self initWithDictionary: result];
-	}
+      NSString *myString;
+      myString = [[NSString allocWithZone: NSDefaultMallocZone()]
+        initWithContentsOfFile: path];
+      if (myString == nil)
+        {
+          DESTROY(self);
+        }
       else
-	{
-	  NSWarnMLog(@"Contents of file '%@' does not contain a dictionary",
-	    path);
-	  DESTROY(self);
-	}
+        {
+          NS_DURING
+            {
+              result = [myString propertyList];
+            }
+          NS_HANDLER
+            {
+              result = nil;
+            }
+          NS_ENDHANDLER
+          RELEASE(myString);
+        }
+    }
+  RELEASE(tableData);
+
+  if ([result isKindOfClass: NSDictionaryClass])
+    {
+      self = [self initWithDictionary: result];
+    }
+  else
+    {
+      NSWarnMLog(@"Contents of file '%@' does not contain a dictionary",
+                 path);
+      DESTROY(self);
     }
   return self;
 }
