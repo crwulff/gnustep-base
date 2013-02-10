@@ -3083,6 +3083,26 @@ static UCollator *GSICUCollatorOpen(NSStringCompareOptions mask, NSLocale *local
   return [self length];				// Assume single byte/char
 }
 
+- (NSString *)decomposedStringWithCanonicalMapping
+{
+  return self; // TODO
+}
+
+- (NSString *)precomposedStringWithCanonicalMapping
+{
+  return self; // TODO
+}
+
+- (NSString *)decomposedStringWithCompatibilityMapping
+{
+  return self; // TODO
+}
+
+- (NSString *)precomposedStringWithCompatibilityMapping
+{
+  return self; // TODO
+}
+
 /**
  * Returns a C string converted using the default C string encoding, which may
  * result in information loss.  The memory pointed to is not owned by the
