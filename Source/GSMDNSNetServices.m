@@ -794,7 +794,7 @@ static void DNSSD_API
       Browser	*browser;
       
       browser = malloc(sizeof (struct _Browser));
-      memset(browser, 0, sizeof browser);
+      memset(browser, 0, sizeof &browser);
       
       CREATELOCK(browser);
       
@@ -1736,7 +1736,7 @@ static void DNSSD_API
       Service	*service;
       
       service = malloc(sizeof (struct _Service));
-      memset(service, 0, sizeof service);
+      memset(service, 0, sizeof &service);
       
       CREATELOCK(service);
       
@@ -1745,7 +1745,7 @@ static void DNSSD_API
       service->timer = nil;
       service->timeout = nil;
       
-      service->info = [[NSMutableDictionary alloc] initWithCapacity: 1];
+      service->info = [[NSMutableDictionary alloc] initWithCapacity: 3];
       [service->info setObject: [domain retain]
 			forKey: @"Domain"];
       [service->info setObject: [name retain]
@@ -1868,12 +1868,6 @@ static void DNSSD_API
 	if (NO == service->isPublishing)
 	  {
 	    err = NSNetServicesBadArgumentError;
-	    break;
-	  }
-	
-	if (! [self delegate])
-	  {
-	    err = NSNetServicesInvalidError;
 	    break;
 	  }
 	
@@ -2479,7 +2473,7 @@ static void DNSSD_API
       Monitor	*monitor;
       
       monitor = malloc(sizeof (struct _Monitor));
-      memset(monitor, 0, sizeof monitor);
+      memset(monitor, 0, sizeof &monitor);
       
       CREATELOCK(monitor);
       
