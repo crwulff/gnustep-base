@@ -70,6 +70,12 @@ GS_EXPORT NSString* const NSURLFileScheme;
  */
 + (id) fileURLWithPath: (NSString*)aPath;
 
+/**
+ * Create and return a file URL with the supplied path. If isDir
+ * then the path is treated as a directory.
+ */
++ (id) fileURLWithPath: (NSString*)aPath isDirectory: (BOOL)isDir;
+
 #if OS_API_VERSION(100600,GS_API_LATEST) 
 /** Creates a file URL using a path built from components.
  */
