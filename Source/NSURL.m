@@ -902,8 +902,13 @@ static NSUInteger	urlAlign;
 	    {
 	      buf->isFile = YES;
 	    }
-	  else if (strcmp(buf->scheme, "data") == 0
-            || strcmp(buf->scheme, "mailto") == 0)
+	  else if (strcmp(buf->scheme, "data") == 0)
+            {
+	      canBeGeneric = NO;
+              DESTROY(_baseURL);
+              base = 0;
+            }
+          else if (strcmp(buf->scheme, "mailto") == 0)
 	    {
 	      usesFragments = NO;
 	      usesParameters = NO;
@@ -1720,7 +1725,11 @@ static NSUInteger	urlAlign;
 
       if (myData->path != 0)
 	{
-	  path = [NSString stringWithUTF8String: myData->path];
+          char		buf[strlen(myData->path) + 1];
+
+          strcpy(buf, myData->path);
+          unescape(buf, buf);
+	  path = [NSString stringWithUTF8String: buf];
 	}
       return path;
     }
