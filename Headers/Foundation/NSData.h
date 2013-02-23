@@ -48,6 +48,13 @@ enum {
 enum {
   NSAtomicWrite = 1
 };
+
+enum {
+   NSDataReadingMappedIfSafe = 1,
+   NSDataReadingUncached = 2,
+   NSDataReadingMappedAlways = 8,
+};
+typedef NSUInteger NSDataReadingOptions;
 #endif
 
 @interface NSData : NSObject <NSCoding, NSCopying, NSMutableCopying>
@@ -68,6 +75,9 @@ enum {
 + (id) dataWithContentsOfMappedFile: (NSString*)path;
 #if OS_API_VERSION(GS_API_MACOSX, GS_API_LATEST)
 + (id) dataWithContentsOfURL: (NSURL*)url;
++ (id) dataWithContentsOfURL: (NSURL*)url
+                     options: (NSDataReadingOptions)mask
+                       error: (NSError **)errorPtr;
 #endif
 + (id) dataWithData: (NSData*)data;
 - (id) initWithBytes: (const void*)aBuffer

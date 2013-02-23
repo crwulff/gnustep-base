@@ -534,6 +534,15 @@ failure:
   return d;
 }
 
++ (id) dataWithContentsOfURL: (NSURL*)url
+                     options: (NSDataReadingOptions)mask
+                       error: (NSError **)errorPtr
+{
+  // TODO - Use options and report errors
+  *errorPtr = nil;
+  return [self dataWithContentsOfURL: url];
+}
+
 /**
  * Returns an autoreleased instance initialised by copying the contents of data.
  */
