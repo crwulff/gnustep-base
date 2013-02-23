@@ -3623,4 +3623,6 @@ NSString * const NSFileTypeSocket = @"NSFileTypeSocket";
 NSString * const NSFileTypeSymbolicLink = @"NSFileTypeSymbolicLink";
 NSString * const NSFileTypeUnknown = @"NSFileTypeUnknown";
 
+NSString * const NSFileBusy = @"NSFileBusy";
+
 

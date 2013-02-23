@@ -487,6 +487,8 @@ GS_EXPORT NSString* const NSFileSystemNumber;
     [NSFileManager-fileAttributesAtPath:traverseLink:]. */
 GS_EXPORT NSString* const NSFileType;
 
+GS_EXPORT NSString* const NSFileBusy;
+
 /* File Types */
 
 /** Possible value for '<code>NSFileType</code>' key in dictionary returned by
