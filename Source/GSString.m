@@ -1035,8 +1035,14 @@ fixBOM(unsigned char **bytes, NSUInteger*length, BOOL *owned,
     }
   if (length > 0)
     {
-      const void	*original = bytes;
+      const void	*original;
 
+      if (0 == bytes)
+	{
+	  [NSException raise: NSInvalidArgumentException
+		      format: @"-initWithBytes:lenth:encoding given nul bytes"];
+	}
+      original = bytes;
 #if defined(OBJC_SMALL_OBJECT_SHIFT) && (OBJC_SMALL_OBJECT_SHIFT == 3)
       if (useTinyStrings)
         {
@@ -1276,7 +1282,7 @@ fixBOM(unsigned char **bytes, NSUInteger*length, BOOL *owned,
       me->_flags.wide = 1;
       me->_flags.owned = flag;
     }
-  return me;
+  return (id)me;
 }
 
 - (id) initWithCharacters: (const unichar*)chars
@@ -2632,11 +2638,11 @@ intValue_c(GSStr self)
     }
   else
     {
-      unsigned	len = (end - ptr) < 32 ? (end - ptr) : 31;
-      char	buf[len+1];
+      unsigned int	l = (end - ptr) < 32 ? (end - ptr) : 31;
+      char		buf[32];
 
-      memcpy(buf, ptr, len);
-      buf[len] = '\0';
+      memcpy(buf, ptr, l);
+      buf[l] = '\0';
       return atol((const char*)buf);
     }
 }
@@ -2658,7 +2664,7 @@ intValue_u(GSStr self)
   else
     {
       unsigned int	l = (end - ptr) < 32 ? (end - ptr) : 31;
-      unsigned char	buf[l+1];
+      unsigned char	buf[32];
       unsigned char	*b = buf;
 
       GSFromUnicode(&b, &l, ptr, l, internalEncoding, 0, GSUniTerminate);
@@ -3363,50 +3369,48 @@ transmute(GSStr self, NSString *aString)
 {
   if (self->_flags.hash == 0)
     {
-      unsigned	ret = 0;
-      unsigned	len = self->_count;
+      uint32_t	ret = 0;
+      int	len = (int)self->_count;
 
       if (len > 0)
 	{
-	  register unsigned	index = 0;
-
 	  if (self->_flags.wide)
 	    {
-	      register const unichar	*p = self->_contents.u;
+	      const unichar	*p = self->_contents.u;
 
-	      while (index < len)
-		{
-		  ret = (ret << 5) + ret + p[index++];
-		}
+              ret = GSPrivateHash(0, p, len * sizeof(unichar));
 	    }
-	  else
+	  else if (len > 64)
+            {
+              return (self->_flags.hash = [super hash]);
+            }
+          else
 	    {
-	      register const unsigned char	*p = self->_contents.c;
+              unichar                   buf[64];
+              unsigned	                index;
+	      const unsigned char	*p = self->_contents.c;
 
 	      if (internalEncoding == NSISOLatin1StringEncoding)
 		{
-		  while (index < len)
-		    {
-		      ret = (ret << 5) + ret + p[index++];
-		    }
-		}
+                  for (index = 0; index < len; index++)
+                    {
+                      buf[index] = p[index];
+                    }
+                }
 	      else
 		{
-		  while (index < len)
-		    {
-		      unichar	u = p[index++];
+                  for (index = 0; index < len; index++)
+                    {
+		      unichar	u = p[index];
 
-		      if (u > 127)
-			{
-			  unsigned char	c = (unsigned char)u;
-			  unsigned int	s = 1;
-			  unichar	*d = &u;
-
-			  GSToUnicode(&d, &s, &c, 1, internalEncoding, 0, 0);
-			}
-		      ret = (ret << 5) + ret + u;
-		    }
+                      if (u > 127)
+                        {
+                          return (self->_flags.hash = [super hash]);
+                        }
+                      buf[index] = u;
+                    }
 		}
+              ret = GSPrivateHash(0, buf, len * sizeof(unichar));
 	    }
 
 	  /*
@@ -4596,6 +4600,15 @@ NSAssert(_flags.owned == 1 && _zone != 0, NSInternalInconsistencyException);
       fixBOM((unsigned char**)&bytes, &length, &shouldFree, encoding);
       chars = (unsigned char*)bytes;
     }
+  if (0 == length)
+    {
+      return [self initWithCapacity: 0];
+    }
+  if (0 == chars)
+    {
+      [NSException raise: NSInvalidArgumentException
+		  format: @"-initWithBytes:lenth:encoding given nul bytes"];
+    }
 
   if (encoding == NSUTF8StringEncoding)
     {
@@ -5530,25 +5543,41 @@ literalIsEqual(NXConstantString *self, id anObject)
 }
 
 /* Must match the implementation in NSString
+ * To avoid allocating memory, we build the hash incrementally.
  */
 - (NSUInteger) hash
 {
   if (nxcslen > 0)
     {
-      unsigned	ret = 0;
+      uint32_t  s0 = 0;
+      uint32_t  s1 = 0;
+      unichar   chunk[64];
+      uint32_t	ret;
       unichar	n = 0;
       unsigned	i = 0;
-      unichar	c;
+      int       l = 0;
+      uint32_t  t = 0;
 
       while (i < nxcslen)
 	{
-	  c = nextUTF8((const uint8_t *)nxcsptr, nxcslen, &i, &n);
-	  ret = (ret << 5) + ret + c;
+	  chunk[l++] = nextUTF8((const uint8_t *)nxcsptr, nxcslen, &i, &n);
+	  if (64 == l)
+            {
+              GSPrivateIncrementalHash(&s0, &s1, chunk, l * sizeof(unichar));
+              t += l;
+              l = 0;
+            }
 	}
       if (0 != n)
 	{
-	  ret = (ret << 5) + ret + n;	// Add final character
+	  chunk[l++] = n;	// Add final character
 	}
+      if (l > 0)
+        {
+          GSPrivateIncrementalHash(&s0, &s1, chunk, l * sizeof(unichar));
+          t += l;
+        }
+      ret = GSPrivateFinishHash(s0, s1, t * sizeof(unichar));
       ret &= 0x0fffffff;
       if (ret == 0)
 	{
@@ -5638,7 +5667,7 @@ literalIsEqual(NXConstantString *self, id anObject)
 	      buf[pos] = nextUTF8((const uint8_t *)nxcsptr, nxcslen, &i, &n);
 	    }
 	  index = stop;
-	  while (index-- > 0)
+	  while (index-- > start)
 	    {
 	      if ((*mImp)(aSet, @selector(characterIsMember:), buf[--pos]))
 		{

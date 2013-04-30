@@ -58,6 +58,7 @@
 #import "Foundation/NSPathUtilities.h"
 #import "Foundation/NSProcessInfo.h"
 #import "Foundation/NSSet.h"
+#import "Foundation/NSURL.h"
 #import "Foundation/NSValue.h"
 #import "GSPrivate.h"
 #import "GNUstepBase/NSObject+GNUstepBase.h"
@@ -320,10 +321,6 @@ static Class	GSAttrDictionaryClass = 0;
 static NSFileManager* defaultManager = nil;
 static NSStringEncoding	defaultEncoding;
 
-/**
- * Returns a shared default file manager which may be used throughout an
- * application.
- */
 + (NSFileManager*) defaultManager
 {
   if (defaultManager == nil)
@@ -360,13 +357,6 @@ static NSStringEncoding	defaultEncoding;
   [super dealloc];
 }
 
-/**
- * Changes the current directory used for all subsequent operations.<br />
- * All non-absolute paths are interpreted relative to this directory.<br />
- * The current directory is set on a per-task basis, so the current
- * directory for other file manager instances will also be changed
- * by this method.
- */
 - (BOOL) changeCurrentDirectoryPath: (NSString*)path
 {
   static Class	bundleClass = 0;
@@ -678,7 +668,7 @@ static NSStringEncoding	defaultEncoding;
 	  NSString	*n = [a1 objectAtIndex: index];
 	  NSString	*p1;
 	  NSString	*p2;
-	  NSAutoreleasePool *pool = [NSAutoreleasePool new];
+	  CREATE_AUTORELEASE_POOL(pool);
 
 	  p1 = [path1 stringByAppendingPathComponent: n];
 	  p2 = [path2 stringByAppendingPathComponent: n];
@@ -689,11 +679,12 @@ static NSStringEncoding	defaultEncoding;
 	    {
 	      ok = NO;
 	    }
-	  else if ([t isEqual: NSFileTypeDirectory])
+	  else if ([t isEqual: NSFileTypeDirectory]
+            || [t isEqual: NSFileTypeRegular])
 	    {
 	      ok = [self contentsEqualAtPath: p1 andPath: p2];
 	    }
-	  [pool drain];
+	  RELEASE(pool);
 	}
       return ok;
     }
@@ -715,10 +706,6 @@ static NSStringEncoding	defaultEncoding;
       if (nil == result)
 	{
 	  *error = [self _errorFrom: path to: nil];
-	}
-      else
-	{
-	  *error = nil;
 	}
     }
 
@@ -780,13 +767,28 @@ static NSStringEncoding	defaultEncoding;
 	{
 	  *error = [self _errorFrom: path to: nil];
 	}
-      else
-	{
-	  *error = nil;
-	}
     }
 
   return result;
+}
+
+/**
+ * Creates a new directory and all intermediate directories in the file URL
+ * if flag is YES.
+ * Creates only the last directory in the URL if flag is NO.<br />
+ * The directory is created with the attributes
+ * specified in attributes and any error is returned in error.<br />
+ * returns YES on success, NO on failure.
+ */
+- (BOOL) createDirectoryAtURL: (NSURL *)url
+  withIntermediateDirectories: (BOOL)flag
+		   attributes: (NSDictionary *)attributes
+			error: (NSError **) error
+{
+  return [self createDirectoryAtPath: [url path]
+	 withIntermediateDirectories: flag 
+			  attributes: attributes
+			       error: error];
 }
 
 /**
@@ -1128,13 +1130,16 @@ static NSStringEncoding	defaultEncoding;
 	{
 	  *error = [self _errorFrom: src to: dst];
 	}
-      else
-	{
-	  *error = nil;
-	}
     }
 
   return result;
+}
+
+- (BOOL) copyItemAtURL: (NSURL*)src
+		 toURL: (NSURL*)dst
+		 error: (NSError**)error
+{
+  return [self copyItemAtPath: [src path] toPath: [dst path] error: error];
 }
 
 /**
@@ -1239,13 +1244,16 @@ static NSStringEncoding	defaultEncoding;
 	{
 	  *error = [self _errorFrom: src to: dst];
 	}
-      else
-	{
-	  *error = nil;
-	}
     }
 
   return result;
+}
+
+- (BOOL) moveItemAtURL: (NSURL*)src
+		 toURL: (NSURL*)dst
+		 error: (NSError**)error
+{
+  return [self moveItemAtPath: [src path] toPath: [dst path] error: error];
 }
 
 /**
@@ -1357,13 +1365,6 @@ static NSStringEncoding	defaultEncoding;
 #endif
 }
 
-/**
- * Removes the file or directory at path, using a
- * handler object which should respond to
- * [NSObject(NSFileManagerHandler)-fileManager:willProcessPath:] and
- * [NSObject(NSFileManagerHandler)-fileManager:shouldProceedAfterError:]
- * messages.
- */
 - (BOOL) removeFileAtPath: (NSString*)path
 		  handler: handler
 {
@@ -1444,12 +1445,12 @@ static NSStringEncoding	defaultEncoding;
 	  NSString		*item;
 	  NSString		*next;
 	  BOOL			result;
-	  NSAutoreleasePool	*arp = [NSAutoreleasePool new];
+	  CREATE_AUTORELEASE_POOL(pool);
 
 	  item = [contents objectAtIndex: i];
 	  next = [path stringByAppendingPathComponent: item];
 	  result = [self removeFileAtPath: next handler: handler];
-	  [arp drain];
+	  RELEASE(pool);
 	  if (result == NO)
 	    {
 	      return NO;
@@ -1485,29 +1486,22 @@ static NSStringEncoding	defaultEncoding;
 	{
 	  *error = [self _errorFrom: path to: nil];
 	}
-      else
-	{
-	  *error = nil;
-	}
     }
 
   return result;
 }
 
-/**
- * Returns YES if a file (or directory etc) exists at the specified path.
- */
+- (BOOL) removeItemAtURL: (NSURL*)url
+		   error: (NSError**)error
+{
+  return [self removeItemAtPath: [url path] error: error];
+}
+
 - (BOOL) fileExistsAtPath: (NSString*)path
 {
   return [self fileExistsAtPath: path isDirectory: 0];
 }
 
-/**
- * Returns YES if a file (or directory etc) exists at the specified path.<br />
- * If the isDirectory argument is not a nul pointer, stores a flag
- * in the location it points to, indicating whether the file is a
- * directory or not.<br />
- */
 - (BOOL) fileExistsAtPath: (NSString*)path isDirectory: (BOOL*)isDirectory
 {
   const _CHAR *lpath = [self fileSystemRepresentationWithPath: path];
@@ -1906,10 +1900,6 @@ static NSStringEncoding	defaultEncoding;
 	{
 	  *error = [self _errorFrom: path to: nil];
 	}
-      else
-	{
-	  *error = nil;
-	}
     }
   
   return d;
@@ -2054,8 +2044,6 @@ static NSStringEncoding	defaultEncoding;
 {
   NSDirectoryEnumerator	*direnum;
   NSMutableArray	*content;
-  IMP			nxtImp;
-  IMP			addImp;
   BOOL			is_dir;
 
   /*
@@ -2065,6 +2053,7 @@ static NSStringEncoding	defaultEncoding;
     {
       return nil;
     }
+  content = [NSMutableArray arrayWithCapacity: 128];
   /* We initialize the directory enumerator with justContents == YES,
      which tells the NSDirectoryEnumerator code that we only enumerate
      the contents non-recursively once, and exit.  NSDirectoryEnumerator
@@ -2074,17 +2063,20 @@ static NSStringEncoding	defaultEncoding;
 						  followSymlinks: NO
 						    justContents: YES
 							     for: self];
-  content = [NSMutableArray arrayWithCapacity: 128];
-
-  nxtImp = [direnum methodForSelector: @selector(nextObject)];
-  addImp = [content methodForSelector: @selector(addObject:)];
-
-  while ((path = (*nxtImp)(direnum, @selector(nextObject))) != nil)
+  if (nil != direnum)
     {
-      (*addImp)(content, @selector(addObject:), path);
-    }
-  RELEASE(direnum);
+      IMP	nxtImp;
+      IMP	addImp;
 
+      nxtImp = [direnum methodForSelector: @selector(nextObject)];
+      addImp = [content methodForSelector: @selector(addObject:)];
+
+      while ((path = (*nxtImp)(direnum, @selector(nextObject))) != nil)
+	{
+	  (*addImp)(content, @selector(addObject:), path);
+	}
+      RELEASE(direnum);
+    }
   return [content makeImmutableCopyOnFail: NO];
 }
 
@@ -2123,30 +2115,31 @@ static NSStringEncoding	defaultEncoding;
   NSDirectoryEnumerator	*direnum;
   NSMutableArray	*content;
   BOOL			isDir;
-  IMP			nxtImp;
-  IMP			addImp;
 
   if (![self fileExistsAtPath: path isDirectory: &isDir] || !isDir)
     {
       return nil;
     }
+  content = [NSMutableArray arrayWithCapacity: 128];
   direnum = [[NSDirectoryEnumerator alloc] initWithDirectoryPath: path
 				       recurseIntoSubdirectories: YES
 						  followSymlinks: NO
 						    justContents: NO
 							     for: self];
-  content = [NSMutableArray arrayWithCapacity: 128];
-
-  nxtImp = [direnum methodForSelector: @selector(nextObject)];
-  addImp = [content methodForSelector: @selector(addObject:)];
-
-  while ((path = (*nxtImp)(direnum, @selector(nextObject))) != nil)
+  if (nil != direnum)
     {
-      (*addImp)(content, @selector(addObject:), path);
+      IMP	nxtImp;
+      IMP	addImp;
+
+      nxtImp = [direnum methodForSelector: @selector(nextObject)];
+      addImp = [content methodForSelector: @selector(addObject:)];
+
+      while ((path = (*nxtImp)(direnum, @selector(nextObject))) != nil)
+	{
+	  (*addImp)(content, @selector(addObject:), path);
+	}
+      RELEASE(direnum);
     }
-
-  RELEASE(direnum);
-
   return [content makeImmutableCopyOnFail: NO];
 }
 
@@ -2283,42 +2276,43 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 		justContents: (BOOL)justContents
 			 for: (NSFileManager*)mgr
 {
-//TODO: the justContents flag is currently basically useless and should be
-//      removed
-  _DIR		*dir_pointer;
-  const _CHAR	*localPath;
+  if (nil != (self = [super init]))
+    {
+    //TODO: the justContents flag is currently basically useless and should be
+    //      removed
+      _DIR		*dir_pointer;
+      const _CHAR	*localPath;
 
-  self = [super init];
-
-  _mgr = RETAIN(mgr);
+      _mgr = RETAIN(mgr);
 #if	GS_WITH_GC
-  _stack = NSAllocateCollectable(sizeof(GSIArray_t), NSScannedOption);
+      _stack = NSAllocateCollectable(sizeof(GSIArray_t), NSScannedOption);
 #else
-  _stack = NSZoneMalloc([self zone], sizeof(GSIArray_t));
+      _stack = NSZoneMalloc([self zone], sizeof(GSIArray_t));
 #endif
-  GSIArrayInitWithZoneAndCapacity(_stack, [self zone], 64);
+      GSIArrayInitWithZoneAndCapacity(_stack, [self zone], 64);
 
-  _flags.isRecursive = recurse;
-  _flags.isFollowing = follow;
-  _flags.justContents = justContents;
+      _flags.isRecursive = recurse;
+      _flags.isFollowing = follow;
+      _flags.justContents = justContents;
 
-  _topPath = [[NSString alloc] initWithString: path];
+      _topPath = [[NSString alloc] initWithString: path];
 
-  localPath = [_mgr fileSystemRepresentationWithPath: path];
-  dir_pointer = _OPENDIR(localPath);
-  if (dir_pointer)
-    {
-      GSIArrayItem item;
+      localPath = [_mgr fileSystemRepresentationWithPath: path];
+      dir_pointer = _OPENDIR(localPath);
+      if (dir_pointer)
+        {
+          GSIArrayItem item;
 
-      item.ext.path = @"";
-      item.ext.pointer = dir_pointer;
+          item.ext.path = @"";
+          item.ext.pointer = dir_pointer;
 
-      GSIArrayAddItem(_stack, item);
-    }
-  else
-    {
-      NSLog(@"Failed to recurse into directory '%@' - %@", path,
-	[NSError _last]);
+          GSIArrayAddItem(_stack, item);
+        }
+      else
+        {
+          NSLog(@"Failed to recurse into directory '%@' - %@", path,
+            [NSError _last]);
+        }
     }
   return self;
 }
@@ -2779,7 +2773,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 {
   NSDirectoryEnumerator	*enumerator;
   NSString		*dirEntry;
-  NSAutoreleasePool	*pool = [NSAutoreleasePool new];
+  CREATE_AUTORELEASE_POOL(pool);
 
   enumerator = [self enumeratorAtPath: source];
   while ((dirEntry = [enumerator nextObject]))
@@ -2811,6 +2805,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 					   fromPath: sourceFile
 					     toPath: destinationFile])
                 {
+                  RELEASE(pool);
                   return NO;
                 }
 	      /*
@@ -2828,7 +2823,10 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 	      if (![self _copyPath: sourceFile
                          toPath: destinationFile
                          handler: handler])
-		return NO;
+                {
+                  RELEASE(pool);
+                  return NO;
+                }
 	    }
 	}
       else if ([fileType isEqual: NSFileTypeRegular])
@@ -2836,7 +2834,10 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 	  if (![self _copyFile: sourceFile
 			toFile: destinationFile
 		       handler: handler])
-	    return NO;
+            {
+              RELEASE(pool);
+              return NO;
+            }
 	}
       else if ([fileType isEqual: NSFileTypeSymbolicLink])
 	{
@@ -2852,6 +2853,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 		fromPath: sourceFile
 		toPath: destinationFile])
                 {
+                  RELEASE(pool);
                   return NO;
                 }
 	    }
@@ -2868,7 +2870,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 	}
       [self changeFileAttributes: attributes atPath: destinationFile];
     }
-  [pool drain];
+  RELEASE(pool);
 
   return YES;
 }
@@ -2880,7 +2882,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 #ifdef HAVE_LINK
   NSDirectoryEnumerator	*enumerator;
   NSString		*dirEntry;
-  NSAutoreleasePool	*pool = [NSAutoreleasePool new];
+  CREATE_AUTORELEASE_POOL(pool);
 
   enumerator = [self enumeratorAtPath: source];
   while ((dirEntry = [enumerator nextObject]))
@@ -2909,6 +2911,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 					  fromPath: sourceFile
 					    toPath: destinationFile] == NO)
                 {
+                  RELEASE(pool);
                   return NO;
                 }
 	    }
@@ -2919,6 +2922,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 			   toPath: destinationFile
 			  handler: handler] == NO)
 		{
+                  RELEASE(pool);
 		  return NO;
 		}
 	    }
@@ -2937,6 +2941,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 		fromPath: sourceFile
 		toPath: destinationFile] == NO)
                 {
+                  RELEASE(pool);
                   return NO;
                 }
 	    }
@@ -2952,13 +2957,14 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
 		fromPath: sourceFile
 		toPath: destinationFile] == NO)
                 {
+                  RELEASE(pool);
                   return NO;
                 }
 	    }
 	}
       [self changeFileAttributes: attributes atPath: destinationFile];
     }
-  [pool drain];
+  RELEASE(pool);
   return YES;
 #else
   ASSIGN(_lastError, @"Links not supported on this platform");
@@ -2983,7 +2989,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
     @selector (fileManager:shouldProceedAfterError:)])
     {
       NSDictionary *errorInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                                path, @"Path",
+                                                path, NSFilePathErrorKey,
                                               error, @"Error", nil];
       return [handler fileManager: self
 	  shouldProceedAfterError: errorInfo];
@@ -3001,7 +3007,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
     @selector (fileManager:shouldProceedAfterError:)])
     {
       NSDictionary *errorInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                                path, @"Path",
+                                                path, NSFilePathErrorKey,
                                               fromPath, @"FromPath",
                                               toPath, @"ToPath",
                                               error, @"Error", nil];
@@ -3044,7 +3050,7 @@ static inline void gsedRelease(GSEnumeratedDirectory X)
   else if (fromPath)
     {
       errorInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-        fromPath, @"Path",
+        fromPath, NSFilePathErrorKey,
         message, NSLocalizedDescriptionKey,
         nil];      
     }
@@ -3173,7 +3179,7 @@ static NSSet	*fileKeys = nil;
 #if	defined(__MINGW__)
   DWORD		returnCode = 0;
   PSID		sidOwner;
-  BOOL		result = TRUE;
+  int		result = TRUE;
   _CHAR		account[BUFSIZ];
   _CHAR		domain[BUFSIZ];
   DWORD		accountSize = 1024;
@@ -3330,7 +3336,7 @@ static NSSet	*fileKeys = nil;
 #if	defined(__MINGW__)
   DWORD		returnCode = 0;
   PSID		sidOwner;
-  BOOL		result = TRUE;
+  int		result = TRUE;
   _CHAR		account[BUFSIZ];
   _CHAR		domain[BUFSIZ];
   DWORD		accountSize = 1024;

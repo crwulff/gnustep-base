@@ -164,6 +164,7 @@ GSHTTPAuthentication.m \
 GSHTTPURLHandle.m \
 GSICUString.m \
 GSOrderedSet.m \
+GSPrivateHash.m \
 GSQuickSort.m \
 GSRunLoopWatcher.m \
 GSSet.m \
@@ -228,6 +229,7 @@ NSLocale.m \
 NSLock.m \
 NSLog.m \
 NSMapTable.m \
+NSMetadata.m \
 NSMethodSignature.m \
 NSNotification.m \
 NSNotificationCenter.m \

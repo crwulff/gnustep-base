@@ -1361,6 +1361,7 @@ setNonBlocking(SOCKET fd)
       struct sockaddr	sin;
       socklen_t	        size = sizeof(sin);
 
+      memset(&sin, '\0', size);
       if ([key isEqualToString: GSStreamLocalAddressKey])
 	{
 	  if (getsockname(s, (struct sockaddr*)&sin, &size) != -1)
@@ -2512,8 +2513,12 @@ setNonBlocking(SOCKET fd)
 {
   GSSocketStream *ins = AUTORELEASE([[self _inputStreamClass] new]);
   GSSocketStream *outs = AUTORELEASE([[self _outputStreamClass] new]);
-  uint8_t		buf[BUFSIZ];
-  struct sockaddr	*addr = (struct sockaddr*)buf;
+  /* Align on a 2 byte boundary for a 16bit port number in the sockaddr
+   */
+  struct {
+    uint8_t bytes[BUFSIZ];
+  } __attribute__((aligned(2)))buf;
+  struct sockaddr       *addr = (struct sockaddr*)&buf;
   socklen_t		len = sizeof(buf);
   int			acceptReturn;
 
