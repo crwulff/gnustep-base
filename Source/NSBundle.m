@@ -2753,7 +2753,7 @@ IF_NO_GC(
   return object;
 }
 
-- (NSString *) resourcePath
+- (NSString *) makeContentPath: (NSString*)suffix
 {
   NSString *version = _frameworkVersion;
 
@@ -2764,17 +2764,52 @@ IF_NO_GC(
     {
 #if !defined(__MINGW__)
       return [_path stringByAppendingPathComponent:
-		      [NSString stringWithFormat:@"Versions/%@/Resources",
-				version]];
+		      [NSString stringWithFormat:@"Versions/%@/%@",
+				version, suffix]];
 #else
       /* No Versions (that require symlinks) on MINGW */
-      return [_path stringByAppendingPathComponent: @"Resources"];
+      return [_path stringByAppendingPathComponent: suffix];
 #endif
     }
   else
     {
-      return [_path stringByAppendingPathComponent: @"Resources"];
+      return [_path stringByAppendingPathComponent: suffix];
     }
+}
+
+- (NSString *) resourcePath
+{
+	return [self makeContentPath: @"Resources"];
+}
+
+- (NSString *) builtInPlugInsPath
+{
+	return [self makeContentPath: @"PlugIns"];
+}
+
+- (NSString *) privateFrameworksPath
+{
+	return [self makeContentPath: @"PrivateFrameworks"];
+}
+
+- (NSString *) sharedFrameworksPath
+{
+	return [self makeContentPath: @"Frameworks"];
+}
+
+- (NSString *) sharedSupportPath
+{
+	return [self makeContentPath: @"Framework Support"];
+}
+
+- (NSURL *)sharedFrameworksURL
+{
+	return [NSURL fileURLWithPath: [self sharedFrameworksPath]];
+}
+
+- (NSURL *)sharedSupportURL
+{
+	return [NSURL fileURLWithPath: [self sharedSupportPath]];
 }
 
 - (NSDictionary *) infoDictionary
@@ -2802,29 +2837,6 @@ IF_NO_GC(
 	}
     }
   return _infoDict;
-}
-
-- (NSString *) builtInPlugInsPath
-{
-  NSString  *version = _frameworkVersion;
-
-  if (!version)
-    version = @"Current";
-
-  if (_bundleType == NSBUNDLE_FRAMEWORK)
-    {
-#if !defined(__MINGW__)
-      return [_path stringByAppendingPathComponent:
-                      [NSString stringWithFormat:@"Versions/%@/PlugIns",
-                      version]];
-#else
-      return [_path stringByAppendingPathComponent: @"PlugIns"];
-#endif
-    }
-  else
-    {
-      return [_path stringByAppendingPathComponent: @"PlugIns"];
-    }
 }
 
 - (NSString*) bundleIdentifier

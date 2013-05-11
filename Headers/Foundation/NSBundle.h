@@ -342,7 +342,22 @@ GS_EXPORT NSString* const NSLoadedClasses;
 - (NSString*) resourcePath;
 
 /** Returns the full path to the plug-in subdirectory of the bundle.  */
-- (NSString *) builtInPlugInsPath;
+- (NSString*) builtInPlugInsPath;
+
+/** Returns the full path to the private frameworks subdirectory of the bundle.  */
+- (NSString*) privateFrameworksPath;
+
+/** Returns the full path to the shared frameworks subdirectory of the bundle.  */
+- (NSString*) sharedFrameworksPath;
+
+/** Returns the full path to the shared support subdirectory of the bundle.  */
+- (NSString*) sharedSupportPath;
+
+/** Returns the full path to the shared frameworks subdirectory of the bundle as a URL.  */
+- (NSURL*)sharedFrameworksURL;
+
+/** Returns the full path to the shared support subdirectory of the bundle as a URL.  */
+- (NSURL*)sharedSupportURL;
 
 /** Returns the bundle identifier, as defined by the CFBundleIdentifier
     key in the infoDictionary */
