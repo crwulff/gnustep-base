@@ -426,6 +426,14 @@ typedef NSUInteger NSStringEncodingConversionOptions;
 - (NSUInteger) lengthOfBytesUsingEncoding: (NSStringEncoding)encoding;
 - (NSUInteger) maximumLengthOfBytesUsingEncoding: (NSStringEncoding)encoding;
 
+- (BOOL)getBytes: (void*)buffer
+       maxLength: (NSUInteger)maxBufferCount
+      usedLength: (NSUInteger *)usedBufferCount
+        encoding: (NSStringEncoding)encoding
+         options: (NSStringEncodingConversionOptions)options
+           range: (NSRange)range
+  remainingRange: (NSRangePointer)leftover;
+
 - (NSString *)decomposedStringWithCanonicalMapping;
 - (NSString *)precomposedStringWithCanonicalMapping;
 - (NSString *)decomposedStringWithCompatibilityMapping;

@@ -3079,6 +3079,31 @@ static UCollator *GSICUCollatorOpen(NSStringCompareOptions mask, NSLocale *local
   return [self length];				// Assume single byte/char
 }
 
+- (BOOL)getBytes: (void*)buffer
+       maxLength: (NSUInteger)maxBufferCount
+      usedLength: (NSUInteger *)usedBufferCount
+        encoding: (NSStringEncoding)encoding
+         options: (NSStringEncodingConversionOptions)options
+           range: (NSRange)range
+  remainingRange: (NSRangePointer)leftover
+{
+  // TODO: Use ranges
+  NSData	*d = [self dataUsingEncoding: encoding allowLossyConversion: (options & NSStringEncodingConversionAllowLossy) ? YES : NO];
+  unsigned	length = [d length];
+
+  if (d == nil)
+    {
+      return NO;
+    }
+  if (length > maxBufferCount)
+    {
+      length = maxBufferCount;
+    }
+  memcpy(buffer, [d bytes], length);
+  *usedBufferCount = length;
+  return YES;
+}
+
 - (NSString *)decomposedStringWithCanonicalMapping
 {
   return self; // TODO
