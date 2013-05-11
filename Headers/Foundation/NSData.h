@@ -72,6 +72,9 @@ typedef NSUInteger NSDataReadingOptions;
 	      freeWhenDone: (BOOL)shouldFree;
 #endif
 + (id) dataWithContentsOfFile: (NSString*)path;
++ (id) dataWithContentsOfFile: (NSString*)path
+		      options: (NSDataReadingOptions)mask
+			error: (NSError**)errorPtr;
 + (id) dataWithContentsOfMappedFile: (NSString*)path;
 #if OS_API_VERSION(GS_API_MACOSX, GS_API_LATEST)
 + (id) dataWithContentsOfURL: (NSURL*)url;
@@ -93,6 +96,9 @@ typedef NSUInteger NSDataReadingOptions;
 - (id) initWithContentsOfMappedFile: (NSString*)path;
 #if OS_API_VERSION(GS_API_MACOSX, GS_API_LATEST)
 - (id) initWithContentsOfURL: (NSURL*)url;
+- (id) initWithContentsOfURL: (NSURL*)url
+		     options: (NSDataReadingOptions)mask
+		       error: (NSError**)errorPtr;
 #endif
 - (id) initWithData: (NSData*)data;
 

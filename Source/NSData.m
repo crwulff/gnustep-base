@@ -503,6 +503,14 @@ failure:
   return AUTORELEASE(d);
 }
 
++ (id) dataWithContentsOfFile: (NSString*)path
+		      options: (NSDataReadingOptions)mask
+			error: (NSError**)errorPtr
+{
+	/* TODO: pay attention to mask & errorPtr */
+	return [NSData dataWithContentsOfFile: path];
+}
+
 /**
  * Returns a data object encapsulating the contents of the specified
  * file mapped directly into memory.
@@ -686,6 +694,21 @@ failure:
 - (id) initWithContentsOfURL: (NSURL*)url
 {
   NSData	*data = [url resourceDataUsingCache: YES];
+
+  return [self initWithData: data];
+}
+
+/**
+ *  Initialize with data pointing to contents of URL, which will be
+ *  retrieved immediately in a blocking manner.
+ */
+- (id) initWithContentsOfURL: (NSURL*)url
+		     options: (NSDataReadingOptions)mask
+		       error: (NSError**)errorPtr
+{
+  NSData	*data = [url resourceDataUsingCache: YES];
+
+  // TODO: Use mask and errorPtr
 
   return [self initWithData: data];
 }
@@ -1827,6 +1850,14 @@ failure:
   d = [mutableDataMalloc allocWithZone: NSDefaultMallocZone()];
   d = [d initWithContentsOfFile: path];
   return AUTORELEASE(d);
+}
+
++ (id) dataWithContentsOfFile: (NSString*)path
+		      options: (NSDataReadingOptions)mask
+			error: (NSError**)errorPtr
+{
+	/* TODO: pay attention to mask & errorPtr */
+	return [NSMutableData dataWithContentsOfFile: path];
 }
 
 + (id) dataWithContentsOfMappedFile: (NSString*)path
