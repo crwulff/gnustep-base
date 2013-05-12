@@ -1245,7 +1245,7 @@ _bundle_load_callback(Class theClass, struct objc_category *theCategory)
   [load_lock lock];
   if (!_mainBundle)
     {
-      [self mainBundle];
+      _mainBundle = [self mainBundle];
     }
 
   enumerate = NSEnumerateMapTable(_bundles);
@@ -2702,7 +2702,7 @@ IF_NO_GC(
 
   if (!_mainBundle)
     {
-      [NSBundle mainBundle];
+      _mainBundle = [NSBundle mainBundle];
     }
   if (self == _mainBundle)
     {
