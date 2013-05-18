@@ -118,6 +118,7 @@ GS_EXPORT NSString* const NSLoadedClasses;
   BOOL			_codeLoaded;
   unsigned		_version;
   NSString      	*_frameworkVersion;
+  BOOL                  _hasContentsDir;
 #endif
 #if     GS_NONFRAGILE
 #else

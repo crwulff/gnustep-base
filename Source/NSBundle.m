@@ -1742,6 +1742,7 @@ IF_NO_GC(
   if ([[[_path lastPathComponent] pathExtension] isEqual: @"framework"] == YES)
     {
       _bundleType = (unsigned int)NSBUNDLE_FRAMEWORK;
+      _hasContentsDir = NO;
     }
   else
     {
@@ -1749,6 +1750,8 @@ IF_NO_GC(
 	_bundleType = (unsigned int)NSBUNDLE_APPLICATION;
       else
 	_bundleType = (unsigned int)NSBUNDLE_BUNDLE;
+
+      _hasContentsDir = (nil == bundle_directory_readable([path stringByAppendingPathComponent: @"Contents"])) ? NO : YES;
     }
 
   identifier = [self bundleIdentifier];
@@ -2102,6 +2105,10 @@ IF_NO_GC(
   NSMutableArray	*array;
   NSEnumerator		*enumerate;
 
+  if (nil != bundle_directory_readable([rootPath stringByAppendingPathComponent: @"Contents"]))
+    {
+      rootPath = [rootPath stringByAppendingPathComponent: @"Contents"];
+    }
   array = [NSMutableArray arrayWithCapacity: 8];
   languages = [[NSUserDefaults standardUserDefaults]
     stringArrayForKey: @"NSLanguages"];
@@ -2773,6 +2780,11 @@ IF_NO_GC(
     }
   else
     {
+      NSString *path = _path;
+      if (_hasContentsDir)
+        {
+          path = [path stringByAppendingPathComponent: @"Contents"];
+        }
       return [_path stringByAppendingPathComponent: suffix];
     }
 }
