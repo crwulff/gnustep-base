@@ -1878,6 +1878,11 @@ IF_NO_GC(
   return _path;
 }
 
+- (NSURL *)bundleURL
+{
+  return [NSURL fileURLWithPath: _path];
+}
+
 - (Class) classNamed: (NSString *)className
 {
   int     i, j;
