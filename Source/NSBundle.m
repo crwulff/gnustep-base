@@ -687,7 +687,6 @@ _find_main_bundle_for_tool(NSString *toolName)
 + (NSBundle*) _addFrameworkFromClass: (Class)frameworkClass
 {
   NSBundle	*bundle = nil;
-  NSString	**fmClasses;
   NSString	*bundlePath = nil;
   unsigned int	len;
   const char    *frameworkClassName;
@@ -864,88 +863,122 @@ _find_main_bundle_for_tool(NSString *toolName)
 						  ofType: @"framework"
 						  inDirectory: @"Frameworks"];
 	    }
-
-	  /* Try creating the bundle.  */
-	  if (bundlePath != nil)
-	    {
-	      bundle = [[self alloc] initWithPath: bundlePath];
-	    }
 	}
 
-      [load_lock lock];
-      if (bundle == nil)
-	{
-          NSMapInsert(_byClass, frameworkClass, [NSNull null]);
-          [load_lock unlock];
-	  NSWarnMLog (@"Could not find framework %@ in any standard location",
-	    name);
-	  return nil;
-	}
-      else
+      if (bundlePath == nil)
         {
-          bundle->_principalClass = frameworkClass;
-          NSMapInsert(_byClass, frameworkClass, bundle);
-          [load_lock unlock];
+           NSWarnMLog (@"Could not find framework %@ in any standard location", name);
+	}
+
+      bundle = [NSBundle _addFrameworkFromClass: frameworkClass withPath: bundlePath];
+    }
+
+  return bundle;
+}
+
++ (NSBundle*) _addFrameworkFromClass: (Class)frameworkClass
+			    withPath: (NSString*)bundlePath
+{
+  NSString	**fmClasses;
+  NSBundle	*bundle = nil;
+
+  if (frameworkClass == Nil)
+    {
+      return nil;
+    }
+
+  /* If the bundle for this framework class is already loaded,
+   * simply return it.  The lookup will return an NSNull object
+   * if the framework class has no known bundle.
+   */
+  bundle = (id)NSMapGet(_byClass, frameworkClass);
+  if (nil != bundle)
+    {
+      if ((id)bundle == (id)[NSNull null])
+        {
+          bundle = nil;
         }
+      return bundle;
+    }
 
-      bundle->_bundleType = NSBUNDLE_FRAMEWORK;
-      bundle->_codeLoaded = YES;
-      /* frameworkVersion is something like 'A'.  */
-      bundle->_frameworkVersion = RETAIN([frameworkClass frameworkVersion]);
-      bundle->_bundleClasses = RETAIN([NSMutableArray arrayWithCapacity: 2]);
+  /* Try creating the bundle.  */
+  if (bundlePath != nil)
+    {
+      bundle = [[self alloc] initWithPath: bundlePath];
+    }
 
-      /* A NULL terminated list of class names - the classes contained
-	 in the framework.  */
-      fmClasses = [frameworkClass frameworkClasses];
+  [load_lock lock];
+  if (bundle == nil)
+    {
+      NSMapInsert(_byClass, frameworkClass, [NSNull null]);
+      [load_lock unlock];
+      NSWarnMLog (@"Framework %s registered with no path", class_getName(frameworkClass));
+      return nil;
+    }
+  else
+    {
+      bundle->_principalClass = frameworkClass;
+      NSMapInsert(_byClass, frameworkClass, bundle);
+      [load_lock unlock];
+    }
 
-      while (*fmClasses != NULL)
-	{
-	  NSValue *value;
-	  Class    class = NSClassFromString(*fmClasses);
+  bundle->_bundleType = NSBUNDLE_FRAMEWORK;
+  bundle->_codeLoaded = YES;
+  /* frameworkVersion is something like 'A'.  */
+  bundle->_frameworkVersion = RETAIN([frameworkClass frameworkVersion]);
+  bundle->_bundleClasses = RETAIN([NSMutableArray arrayWithCapacity: 2]);
 
-          NSMapInsert(_byClass, class, bundle);
-	  value = [NSValue valueWithPointer: (void*)class];
-	  [bundle->_bundleClasses addObject: value];
+  /* A NULL terminated list of class names - the classes contained
+     in the framework.  */
+  fmClasses = [frameworkClass frameworkClasses];
 
-	  fmClasses++;
-	}
+  while (*fmClasses != NULL)
+    {
+      NSValue *value;
+      Class    class = NSClassFromString(*fmClasses);
 
-      /* If _loadingBundle is not nil, it means we reached this point
-       * while loading a bundle.  This can happen if the framework is
-       * linked into the bundle (then, the dynamic linker
-       * automatically drags in the framework when the bundle is
-       * loaded).  But then, the classes in the framework should be
-       * removed from the list of classes in the bundle. Check that
-       * _loadingBundle != bundle which happens on Windows machines when
-       * loading in Frameworks.
+      NSMapInsert(_byClass, class, bundle);
+      value = [NSValue valueWithPointer: (void*)class];
+      [bundle->_bundleClasses addObject: value];
+
+      fmClasses++;
+    }
+
+  /* If _loadingBundle is not nil, it means we reached this point
+   * while loading a bundle.  This can happen if the framework is
+   * linked into the bundle (then, the dynamic linker
+   * automatically drags in the framework when the bundle is
+   * loaded).  But then, the classes in the framework should be
+   * removed from the list of classes in the bundle. Check that
+   * _loadingBundle != bundle which happens on Windows machines when
+   * loading in Frameworks.
+   */
+  if (_loadingBundle != nil && _loadingBundle != bundle)
+    {
+      int i, j;
+      id b = bundle->_bundleClasses;
+      id l = _loadingBundle->_bundleClasses;
+
+      /* The following essentially does:
+       *
+       * [_loadingBundle->_bundleClasses
+       *  removeObjectsInArray: bundle->_bundleClasses];
+       *
+       * The problem with that code is isEqual: gets
+       * sent to the classes, which will cause them to be
+       * initialized (which should not happen.)
        */
-      if (_loadingBundle != nil && _loadingBundle != bundle)
-	{
-	  int i, j;
-          id b = bundle->_bundleClasses;
-          id l = _loadingBundle->_bundleClasses;
-
-	  /* The following essentially does:
-	   *
-	   * [_loadingBundle->_bundleClasses
-	   *  removeObjectsInArray: bundle->_bundleClasses];
-	   *
-	   * The problem with that code is isEqual: gets
-	   * sent to the classes, which will cause them to be
-	   * initialized (which should not happen.)
-	   */
-	  for (i = 0; i < [b count]; i++)
+      for (i = 0; i < [b count]; i++)
+        {
+          for (j = 0; j < [l count]; j++)
 	    {
-	      for (j = 0; j < [l count]; j++)
-		{
-		  if ([[l objectAtIndex: j] pointerValue]
-		     == [[b objectAtIndex:i] pointerValue])
-		    {
-		      [l removeObjectAtIndex:j];
-		    }
-		}
+	      if ([[l objectAtIndex: j] pointerValue]
+	         == [[b objectAtIndex:i] pointerValue])
+	        {
+	          [l removeObjectAtIndex:j];
+	        }
 	    }
-	}
+        }
     }
   return bundle;
 }
