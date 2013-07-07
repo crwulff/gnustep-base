@@ -2862,6 +2862,11 @@ IF_NO_GC(
 	return [NSURL fileURLWithPath: [self sharedSupportPath]];
 }
 
+- (NSURL *)resourceURL
+{
+	return [NSURL fileURLWithPath: [self resourcePath]];
+}
+
 - (NSDictionary *) infoDictionary
 {
   NSString* path;

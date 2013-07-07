@@ -362,6 +362,9 @@ GS_EXPORT NSString* const NSLoadedClasses;
 /** Returns the full path to the shared support subdirectory of the bundle as a URL.  */
 - (NSURL*)sharedSupportURL;
 
+/** Returns the full path to the resources directory of the bundle as a URL.  */
+- (NSURL*)resourceURL;
+
 /** Returns the bundle identifier, as defined by the CFBundleIdentifier
     key in the infoDictionary */
 - (NSString *) bundleIdentifier;
