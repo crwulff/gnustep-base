@@ -712,6 +712,46 @@ static NSStringEncoding	defaultEncoding;
   return result; 
 }
 
+- (NSArray*) contentsOfDirectoryAtURL: (NSURL*)url
+           includingPropertiesForKeys: (NSArray*)keys
+                              options: (NSDirectoryEnumerationOptions)mask
+                                error: (NSError**)error
+{
+  NSArray *files;
+  NSArray *result;
+
+  DESTROY(_lastError);
+  files = [self directoryContentsAtPath: [url path]];
+
+  if (error != NULL)
+    {
+      if (nil == files)
+	{
+	  *error = [self _errorFrom: [url path] to: nil];
+	  return nil;
+	}
+    }
+
+  result = [NSMutableArray arrayWithCapacity: 128];
+  for (NSString *path in files)
+    {
+      /* Skip hidden files, if selected */
+      if ((mask & NSDirectoryEnumerationSkipsHiddenFiles) &&
+          ([path characterAt: 0] == '.'))
+        {
+          continue;
+	}
+
+      NSURL *url = [NSURL fileURLWithPath: path];
+
+      /* TODO: cache info specified by keys */
+
+      [result addObject: url];
+    }
+
+  return result;
+}
+
 /**
  * Creates a new directory and all intermediate directories. if flag is YES.
  * Creates only the last directory in the path if flag is NO.<br />

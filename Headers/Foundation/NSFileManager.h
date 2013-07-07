@@ -198,6 +198,13 @@ typedef	uint32_t	OSType;
 #define OSTYPE_DECLARED
 #endif
 
+enum {
+   NSDirectoryEnumerationSkipsSubdirectoryDescendants = 1L << 0,
+   NSDirectoryEnumerationSkipsPackageDescendants      = 1L << 1,
+   NSDirectoryEnumerationSkipsHiddenFiles             = 1L << 2
+};
+typedef NSUInteger NSDirectoryEnumerationOptions;
+
 @interface NSFileManager : NSObject
 {
 #if	GS_EXPOSE(NSFileManager)
@@ -308,6 +315,19 @@ typedef	uint32_t	OSType;
  * it can't be read for some reason).
  */
 - (NSArray*) contentsOfDirectoryAtPath: (NSString*)path error: (NSError**)error;
+
+/**
+ * Returns an array of the contents of the specified directory.<br />
+ * The listing does <strong>not</strong> recursively list subdirectories.<br />
+ * The special files '.' and '..' are not listed. If mask is
+ * NSDirectoryEnumerationSkipsHiddenFiles then files that start with . are not listed.<br />
+ * Indicates an error by returning nil (eg. if path is not a directory or
+ * it can't be read for some reason).
+ */
+- (NSArray*) contentsOfDirectoryAtURL: (NSURL*)url
+           includingPropertiesForKeys: (NSArray*)keys
+                              options: (NSDirectoryEnumerationOptions)mask
+                                error: (NSError**)error;
 #endif
 
 - (BOOL) copyPath: (NSString*)source
