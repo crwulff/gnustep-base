@@ -73,6 +73,7 @@ typedef NSUInteger NSBinarySearchingOptions;
 - (NSArray*) arrayByAddingObject: (id)anObject;
 - (NSArray*) arrayByAddingObjectsFromArray: (NSArray*)anotherArray;
 - (BOOL) containsObject: anObject;
+- (id) anyObject;
 
 /** <override-subclass />
  * Returns the number of elements contained in the receiver.

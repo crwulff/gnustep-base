@@ -369,6 +369,20 @@ static SEL	rlSel;
 }
 
 /**
+ *  Return an arbitrary object from the array, or nil if this is empty.
+ */
+- (id) anyObject
+{
+  if ([self count] == 0)
+    return nil;
+  else
+    {
+      id e = [self objectEnumerator];
+      return [e nextObject];
+    }
+}
+
+/**
  * Returns a new copy of the receiver.<br />
  * The default abstract implementation of a copy is to use the
  * -initWithArray:copyItems: method with the flag set to YES.<br />
