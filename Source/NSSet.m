@@ -626,6 +626,39 @@ static Class NSMutableSet_concrete_class;
   return [[self allObjects] descriptionWithLocale: locale];
 }
 
+- (id) valueForKey: (NSString*)aKey
+{
+  id result = (id) nil;
+
+  if (([aKey length] != 0) && ([aKey characterAtIndex: 0] == '@'))
+    {
+      result = [super valueForKey: [aKey substringFromIndex: 1]];
+    }
+  else
+    {
+      unsigned count = [self count];
+      if (count > 0)
+        {
+          NSEnumerator  *e = [self objectEnumerator];
+          id            o;
+
+          result = [GSMutableArray array];
+          while ((o = [e nextObject]) != nil)
+            {
+              o = [o valueForKey: aKey];
+              [result addObject: o];
+            }
+          [result makeImmutableCopyOnFail: NO];
+        }
+      else
+        {
+          result = [NSArray array];
+        }
+    }
+
+  return result;
+}
+
 - (id) valueForKeyPath: (NSString*)path
 {
   id result = (id) nil;
