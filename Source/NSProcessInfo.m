@@ -1051,6 +1051,16 @@ int main(int argc, char *argv[], char *env[])
   return NO;
 }
 
+- (id) init
+{
+  self = [super init];
+  if (self)
+    {
+      _suddenTerminationDisablingCount = 1;
+    }
+  return self;
+}
+
 - (NSArray *) arguments
 {
   return _gnu_arguments;
@@ -1444,6 +1454,20 @@ static void determineOperatingSystem()
   return availMem;
 }
 
+- (void) enableSuddenTermination
+{
+  _suddenTerminationDisablingCount--;
+}
+
+- (void) disableSuddenTermination
+{
+  _suddenTerminationDisablingCount++;
+}
+
+- (long) _suddenTerminationDisablingCount
+{
+  return _suddenTerminationDisablingCount;
+}
 @end
 
 void

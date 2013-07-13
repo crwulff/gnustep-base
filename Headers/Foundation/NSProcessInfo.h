@@ -77,11 +77,16 @@ enum {
 
 
 @interface NSProcessInfo: NSObject
+{
+  long _suddenTerminationDisablingCount;
+}
 
 /**
  * Returns the shared NSProcessInfo object for the current process.
  */
 + (NSProcessInfo*) processInfo;
+
+- (id) init;
 
 /**
  * Returns an array containing the arguments supplied to start this
@@ -196,6 +201,12 @@ enum {
 - (NSUInteger) activeProcessorCount;
 /** Not implemented */
 - (unsigned long long) physicalMemory;
+
+- (void) enableSuddenTermination;
+
+- (void) disableSuddenTermination;
+
+- (long) _suddenTerminationDisablingCount;
 #endif
 @end
 
