@@ -361,7 +361,12 @@ static NSArray	*empty = nil;
 
 - (void) setCompletionBlock: (GSOperationCompletionBlock)aBlock
 {
-  internal->completionBlock = aBlock;
+  [internal->lock lock];
+
+  [internal->completionBlock release];
+  internal->completionBlock = [aBlock copy];
+
+  [internal->lock unlock];
 }
 
 - (void) setQueuePriority: (NSOperationQueuePriority)pri
