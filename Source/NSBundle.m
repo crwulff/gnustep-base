@@ -2792,6 +2792,11 @@ IF_NO_GC(
   else
     {
       path = _path;
+
+      if (_hasContentsDir)
+        {
+          path = [path stringByAppendingPathComponent: @"Contents"];
+        }
     }
 
   object = bundle_object_name(path, object);
@@ -2823,7 +2828,7 @@ IF_NO_GC(
         {
           path = [path stringByAppendingPathComponent: @"Contents"];
         }
-      return [_path stringByAppendingPathComponent: suffix];
+      return [path stringByAppendingPathComponent: suffix];
     }
 }
 
