@@ -699,13 +699,16 @@ purgeCollectedFromMapNode(GSIMapTable map, GSIMapNode node)
 
 - (void)run: (NSNotification *)notification
 {
-	self->_notification = notification;
-	[self->_queue addOperation: self];
+  _notification = [notification retain];
+  [_queue addOperation: self];
 }
 
 - (void)main
 {
-	self->_block(self->_notification);
+  _block(_notification);
+
+  [_notification release];
+  _notification = nil;
 }
 
 @end
