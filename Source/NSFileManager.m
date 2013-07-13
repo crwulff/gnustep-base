@@ -718,7 +718,7 @@ static NSStringEncoding	defaultEncoding;
                                 error: (NSError**)error
 {
   NSArray *files;
-  NSArray *result;
+  NSMutableArray *result;
 
   DESTROY(_lastError);
   files = [self directoryContentsAtPath: [url path]];
@@ -737,7 +737,7 @@ static NSStringEncoding	defaultEncoding;
     {
       /* Skip hidden files, if selected */
       if ((mask & NSDirectoryEnumerationSkipsHiddenFiles) &&
-          ([path characterAt: 0] == '.'))
+          ([path characterAtIndex: 0] == '.'))
         {
           continue;
 	}
