@@ -1519,7 +1519,15 @@ cifframe_callback(ffi_cif *cif, void *retp, void **args, void *user)
     {
       info = [[GSKVOInfo alloc] initWithInstance: self];
       [self setObservationInfo: info];
-      object_setClass(self, [r replacement]);
+      if (!class_isMetaClass(object_getClass(self)))
+        {
+          object_setClass(self, [r replacement]);
+	}
+      else
+        {
+          NSLog(@"NSKeyValueObserverRegistration addObserver: %@ forKeyPath: %@ options: %x context %p - called with class instead of object (%@)",
+                [anObserver description], aPath, (int)options, aContext, [self description]);
+	}
     }
 
   /*
