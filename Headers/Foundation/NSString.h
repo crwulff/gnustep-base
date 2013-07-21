@@ -756,6 +756,7 @@ typedef NSUInteger NSStringEncodingConversionOptions;
 			 range: (NSRange)compareRange 
 			locale: (id)locale;
 - (NSComparisonResult) localizedCompare: (NSString *)string;
+- (NSComparisonResult) localizedStandardCompare: (NSString *)string;
 - (NSComparisonResult) localizedCaseInsensitiveCompare: (NSString *)string;
 - (BOOL) writeToFile: (NSString*)filename
 	  atomically: (BOOL)useAuxiliaryFile;
