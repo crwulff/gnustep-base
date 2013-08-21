@@ -299,6 +299,22 @@ static Class	mutableOrderedSetClass;
   return [array objectAtIndex: index];
 }
 
+- (NSUInteger) indexOfObject: (id)object;
+{
+  return [array indexOfObject: object];
+}
+
+- (NSUInteger) indexOfObject: (id)object
+               inSortedRange: (NSRange)range
+                     options: (NSBinarySearchingOptions)opts
+             usingComparator: (NSComparator)cmp
+{
+  return [array indexOfObject: object
+		inSortedRange: range
+		      options: opts
+	      usingComparator: cmp];
+}
+
 - (void) makeObjectsPerform: (SEL)aSelector
 {
   [array makeObjectsPerform: aSelector];
